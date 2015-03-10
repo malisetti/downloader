@@ -27,7 +27,7 @@ public class LinkRepository {
         return getLinkDao().load(id);
     }
 
-    public static Link getLinkByHash(String hash){
+    public static Link getLinkByHash(String hash) {
         return getLinkDao().queryBuilder().where(LinkDao.Properties.Name.eq(hash)).list().get(0);
     }
 
@@ -35,7 +35,7 @@ public class LinkRepository {
         return getLinkDao().loadAll();
     }
 
-    private static LinkDao getLinkDao() {
+    private synchronized static LinkDao getLinkDao() {
         return DownloaderApplication.getInstance().getDaoSession().getLinkDao();
     }
 }

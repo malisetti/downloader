@@ -11,12 +11,15 @@ import android.util.Log;
 import com.abbiya.downloader.greendao.DaoMaster;
 import com.abbiya.downloader.greendao.DaoMaster.DevOpenHelper;
 import com.abbiya.downloader.greendao.DaoSession;
+import com.abbiya.downloader.util.PingNetworkUtil;
 import com.path.android.jobqueue.JobManager;
 import com.path.android.jobqueue.config.Configuration;
 import com.path.android.jobqueue.log.CustomLogger;
+import com.squareup.okhttp.OkHttpClient;
 
 public class DownloaderApplication extends Application {
     private static DownloaderApplication instance;
+    private static OkHttpClient client;
     public DaoSession daoSession;
     private JobManager jobManager;
 
@@ -24,7 +27,7 @@ public class DownloaderApplication extends Application {
         instance = this;
     }
 
-    public static DownloaderApplication getInstance() {
+    public synchronized static DownloaderApplication getInstance() {
         return instance;
     }
 
@@ -34,6 +37,27 @@ public class DownloaderApplication extends Application {
 
         generateDB();
         configureJobManager();
+    }
+
+    @Override
+    public void onTerminate() {
+        try {
+            daoSession.clear();
+        } catch (Exception e) {
+
+        }
+        super.onTerminate();
+    }
+
+    private void generateDB() {
+        DevOpenHelper dbHelper = new DaoMaster.DevOpenHelper(this,
+                Constants.SQLITE_DB_NAME, null);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        DaoMaster.createAllTables(db, true);
+//        db.close();
+//        dbHelper.close();
+        DaoMaster daoMaster = new DaoMaster(db);
+        daoSession = daoMaster.newSession();
     }
 
     private void configureJobManager() {
@@ -61,33 +85,24 @@ public class DownloaderApplication extends Application {
                         Log.e(TAG, String.format(text, args));
                     }
                 })
-                .minConsumerCount(1)//always keep at least one consumer alive
-                .maxConsumerCount(3)//up to 3 consumers at a time
-                .loadFactor(3)//3 jobs per consumer
+                .networkUtil(new PingNetworkUtil(instance))
+                .minConsumerCount(3)//always keep at least one consumer alive
+                .maxConsumerCount(5)//up to 3 consumers at a time
+                .loadFactor(5)//3 jobs per consumer
                 .consumerKeepAlive(120)//wait 2 minute
                 .build();
         jobManager = new JobManager(this, configuration);
     }
 
     public JobManager getJobManager() {
-        if (jobManager == null) {
-            configureJobManager();
-        }
         return jobManager;
-    }
-
-    public void generateDB() {
-        DevOpenHelper dbHelper = new DaoMaster.DevOpenHelper(this,
-                Constants.SQLITE_DB_NAME, null);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        DaoMaster.createAllTables(db, true);
-//        db.close();
-//        dbHelper.close();
-        DaoMaster daoMaster = new DaoMaster(db);
-        daoSession = daoMaster.newSession();
     }
 
     public DaoSession getDaoSession() {
         return daoSession;
+    }
+
+    public synchronized OkHttpClient getClient() {
+        return client == null ? new OkHttpClient() : client;
     }
 }

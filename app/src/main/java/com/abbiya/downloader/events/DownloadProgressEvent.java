@@ -8,7 +8,7 @@ import com.abbiya.downloader.greendao.Link;
 public class DownloadProgressEvent {
     public Link link;
 
-    public DownloadProgressEvent(Link link){
+    public DownloadProgressEvent(Link link) {
         this.link = link;
     }
 }

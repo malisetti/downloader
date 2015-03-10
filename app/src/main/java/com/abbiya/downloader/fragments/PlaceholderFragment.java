@@ -9,16 +9,29 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.abbiya.downloader.Constants;
 import com.abbiya.downloader.DownloaderApplication;
 import com.abbiya.downloader.R;
-import com.abbiya.downloader.events.DownloadLinkAddedEvent;
-import com.abbiya.downloader.events.DownloadProgressEvent;
-import com.abbiya.downloader.jobs.DownloadFileJob;
+import com.abbiya.downloader.Utils;
+import com.abbiya.downloader.events.DownloadFailedEvent;
+import com.abbiya.downloader.events.DownloadSuccessEvent;
+import com.abbiya.downloader.events.GotHeadersEvent;
+import com.abbiya.downloader.jobs.GetFileJob;
+import com.abbiya.downloader.jobs.GetHeadersJob;
+import com.path.android.jobqueue.AsyncAddCallback;
 import com.path.android.jobqueue.JobManager;
+import com.squareup.okhttp.Headers;
+
+import org.apache.commons.io.FileUtils;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import de.greenrobot.event.EventBus;
 
@@ -27,7 +40,11 @@ import de.greenrobot.event.EventBus;
  */
 public class PlaceholderFragment extends Fragment implements View.OnClickListener {
 
+    static final Executor NETWORK_EXECUTOR = Executors.newCachedThreadPool();
+    static final Executor DISK_EXECUTOR = Executors.newCachedThreadPool();
+
     JobManager jobManager;
+    TextView status;
 
     public PlaceholderFragment() {
     }
@@ -39,6 +56,7 @@ public class PlaceholderFragment extends Fragment implements View.OnClickListene
         Button fetchBtn = (Button) rootView.findViewById(R.id.fetch);
         fetchBtn.setOnClickListener(this);
 
+        status = (TextView) rootView.findViewById(R.id.status);
         return rootView;
     }
 
@@ -78,19 +96,99 @@ public class PlaceholderFragment extends Fragment implements View.OnClickListene
         String url = link.getText().toString();
 
         if (url != null && url.trim().length() > 0) {
-            jobManager.addJobInBackground(new DownloadFileJob(url));
-            link.setText("");
-            //Toast.makeText(getActivity(), "Link added to download list", Toast.LENGTH_LONG).show();
+            if(!Utils.isExternalStorageReadable() || !Utils.isExternalStorageWritable()){
+                Toast.makeText(getActivity(), "File system error", Toast.LENGTH_LONG).show();
+                return;
+            }
+            jobManager.addJobInBackground(new GetHeadersJob(url), new AsyncAddCallback() {
+                @Override
+                public void onAdded(long jobId) {
+
+                }
+            });
+            jobManager.clear();
         }
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    public void onEventMainThread(DownloadLinkAddedEvent event) {
-        //Toast.makeText(getActivity(), event.link.getDescription(), Toast.LENGTH_LONG).show();
+    public void onEventMainThread(GotHeadersEvent event) {
+        final Headers headers = event.headers;
+        String contentType = headers.get("Content-Type");
+        String contentLength = headers.get("Content-Length");
+
+        String ext = "file";
+
+        if (contentType != null) {
+            ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(contentType);
+        }
+
+        long cLength = 0;
+        if (contentLength != null) {
+            cLength = Long.valueOf(contentLength).longValue();
+        }
+
+        long freeSpace = Utils.getFreeSpace(Constants.DOWNLOADS_DIR);
+        if(freeSpace <= (cLength + 5000000)){
+            Toast.makeText(getActivity(), "Seems not much space is available", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        boolean isResumable = acceptsMultipartDownloads(headers);
+
+        if(isResumable){
+            long i = 0;
+            long mb = FileUtils.ONE_MB;
+            while (i<=cLength){
+                if(cLength - i <= mb){
+                    /*
+                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(cLength)), new AsyncAddCallback() {
+                        @Override
+                        public void onAdded(long jobId) {
+
+                        }
+                    });
+                    */
+                }else{
+                    /*
+                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(i + mb)), new AsyncAddCallback() {
+                        @Override
+                        public void onAdded(long jobId) {
+
+                        }
+                    });
+                    */
+                }
+                i = i + mb;
+            }
+        }else{
+
+        }
+
+        final GetFileJob getFileJob = new GetFileJob(event.url, "none");
+        jobManager.addJobInBackground(getFileJob, new AsyncAddCallback() {
+            @Override
+            public void onAdded(long jobId) {
+
+            }
+        });
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    public void onEventMainThread(DownloadProgressEvent event){
-        Toast.makeText(getActivity(), " " + event.link.getProgress(), Toast.LENGTH_SHORT).show();
+    public void onEventMainThread(DownloadSuccessEvent event) {
+        Toast.makeText(getActivity(), event.fileName, Toast.LENGTH_LONG).show();
     }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void onEventMainThread(DownloadFailedEvent event) {
+        Toast.makeText(getActivity(), event.errorMessage, Toast.LENGTH_LONG).show();
+    }
+
+    private boolean acceptsMultipartDownloads(Headers headers) {
+        String acceptRanges = headers.get("Accept-Ranges");
+        if (acceptRanges == null || acceptRanges.equals("none")) {
+            return false;
+        }
+        return true;
+    }
+
 }
