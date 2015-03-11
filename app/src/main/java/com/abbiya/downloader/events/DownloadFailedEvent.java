@@ -6,7 +6,7 @@ package com.abbiya.downloader.events;
 public class DownloadFailedEvent {
     public String errorMessage;
 
-    public DownloadFailedEvent(String errorMessage){
+    public DownloadFailedEvent(String errorMessage) {
         this.errorMessage = errorMessage;
     }
 }

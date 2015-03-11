@@ -1,8 +1,9 @@
 package com.abbiya.downloader;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.Environment;
+
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -68,31 +69,32 @@ public class Utils {
         return file;
     }
 
-    public static long getFreeSpace(String dir){
+    public static long getFreeSpace(String dir) {
         File file = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOWNLOADS), dir);
 
         return file.getFreeSpace();
     }
 
-    public static File merge(File one, File two){
+    public static File merge(File one, File two) {
         File mergedFile = null;
         try {
-             mergedFile = getTempFile(DownloaderApplication.getInstance().getApplicationContext(), "fd");
+            mergedFile = getTempFile(DownloaderApplication.getInstance().getApplicationContext(), "fd");
             FileInputStream fis1 = new FileInputStream(one);
             FileInputStream fis2 = new FileInputStream(two);
-            SequenceInputStream sis = new SequenceInputStream(fis1,fis2);
+            SequenceInputStream sis = new SequenceInputStream(fis1, fis2);
 
-            if(!mergedFile.exists()){
+            if (!mergedFile.exists()) {
                 mergedFile.createNewFile();
             }
+            FileUtils.writeByteArrayToFile(mergedFile, FileUtils.readFileToByteArray(one), true);
 
             FileOutputStream fos = new FileOutputStream(mergedFile);
 
             int temp;
 
-            while ((temp = sis.read())!= -1){
-                fos.write((byte)temp);
+            while ((temp = sis.read()) != -1) {
+                fos.write((byte) temp);
             }
 
             fis1.close();

@@ -15,4 +15,5 @@ public final class Constants {
     //Job groups
     final public static String GET_HEADERS = "GET_HEADERS";
     final public static String GET_FILE = "GET_FILE";
+    public static final String NONE = "none";
 }

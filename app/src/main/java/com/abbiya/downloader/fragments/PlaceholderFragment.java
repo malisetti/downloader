@@ -20,18 +20,15 @@ import com.abbiya.downloader.DownloaderApplication;
 import com.abbiya.downloader.R;
 import com.abbiya.downloader.Utils;
 import com.abbiya.downloader.events.DownloadFailedEvent;
+import com.abbiya.downloader.events.DownloadLinkAddedEvent;
 import com.abbiya.downloader.events.DownloadSuccessEvent;
 import com.abbiya.downloader.events.GotHeadersEvent;
 import com.abbiya.downloader.jobs.GetFileJob;
 import com.abbiya.downloader.jobs.GetHeadersJob;
-import com.path.android.jobqueue.AsyncAddCallback;
 import com.path.android.jobqueue.JobManager;
 import com.squareup.okhttp.Headers;
 
 import org.apache.commons.io.FileUtils;
-
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import de.greenrobot.event.EventBus;
 
@@ -39,9 +36,6 @@ import de.greenrobot.event.EventBus;
  * A placeholder fragment containing a simple view.
  */
 public class PlaceholderFragment extends Fragment implements View.OnClickListener {
-
-    static final Executor NETWORK_EXECUTOR = Executors.newCachedThreadPool();
-    static final Executor DISK_EXECUTOR = Executors.newCachedThreadPool();
 
     JobManager jobManager;
     TextView status;
@@ -96,23 +90,17 @@ public class PlaceholderFragment extends Fragment implements View.OnClickListene
         String url = link.getText().toString();
 
         if (url != null && url.trim().length() > 0) {
-            if(!Utils.isExternalStorageReadable() || !Utils.isExternalStorageWritable()){
+            if (!Utils.isExternalStorageReadable() || !Utils.isExternalStorageWritable()) {
                 Toast.makeText(getActivity(), "File system error", Toast.LENGTH_LONG).show();
                 return;
             }
-            jobManager.addJobInBackground(new GetHeadersJob(url), new AsyncAddCallback() {
-                @Override
-                public void onAdded(long jobId) {
-
-                }
-            });
-            jobManager.clear();
+            jobManager.addJobInBackground(new GetHeadersJob(url));
         }
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    public void onEventMainThread(GotHeadersEvent event) {
-        final Headers headers = event.headers;
+    public void onEventMainThread(final GotHeadersEvent event) {
+        Headers headers = event.headers;
         String contentType = headers.get("Content-Type");
         String contentLength = headers.get("Content-Length");
 
@@ -128,54 +116,40 @@ public class PlaceholderFragment extends Fragment implements View.OnClickListene
         }
 
         long freeSpace = Utils.getFreeSpace(Constants.DOWNLOADS_DIR);
-        if(freeSpace <= (cLength + 5000000)){
+        if (freeSpace <= (cLength + 5000000)) {
             Toast.makeText(getActivity(), "Seems not much space is available", Toast.LENGTH_LONG).show();
             return;
         }
 
-        boolean isResumable = acceptsMultipartDownloads(headers);
-
-        if(isResumable){
+        boolean resumable = acceptsMultipartDownloads(headers);
+        int jobNum = 0;
+        if (resumable) {
             long i = 0;
             long mb = FileUtils.ONE_MB;
-            while (i<=cLength){
-                if(cLength - i <= mb){
-                    /*
-                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(cLength)), new AsyncAddCallback() {
-                        @Override
-                        public void onAdded(long jobId) {
+            int parts = (int)(cLength / mb) + 1;
 
-                        }
-                    });
-                    */
-                }else{
-                    /*
-                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(i + mb)), new AsyncAddCallback() {
-                        @Override
-                        public void onAdded(long jobId) {
-
-                        }
-                    });
-                    */
+            while (i <= cLength) {
+                if (cLength - i <= mb) {
+                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(cLength), jobNum));
+                } else {
+                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(i + mb), jobNum));
                 }
-                i = i + mb;
+                i += mb;
+                jobNum++;
             }
-        }else{
-
+        } else {
+            jobManager.addJobInBackground(new GetFileJob(event.url, Constants.NONE, jobNum));
         }
+    }
 
-        final GetFileJob getFileJob = new GetFileJob(event.url, "none");
-        jobManager.addJobInBackground(getFileJob, new AsyncAddCallback() {
-            @Override
-            public void onAdded(long jobId) {
-
-            }
-        });
+    @SuppressWarnings("UnusedDeclaration")
+    public void onEventMainThread(DownloadLinkAddedEvent event){
+        Toast.makeText(getActivity(), event.link, Toast.LENGTH_SHORT).show();
     }
 
     @SuppressWarnings("UnusedDeclaration")
     public void onEventMainThread(DownloadSuccessEvent event) {
-        Toast.makeText(getActivity(), event.fileName, Toast.LENGTH_LONG).show();
+        //Toast.makeText(getActivity(), event.fileName, Toast.LENGTH_LONG).show();
     }
 
     @SuppressWarnings("UnusedDeclaration")

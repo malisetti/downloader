@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/Downloader.iml" filepath="$PROJECT_DIR$/Downloader.iml" />
       <module fileurl="file://$PROJECT_DIR$/GreenDaoForAndroidStudio/GreenDaoForAndroidStudio/MyDaoGenerator/MyDaoGenerator.iml" filepath="$PROJECT_DIR$/GreenDaoForAndroidStudio/GreenDaoForAndroidStudio/MyDaoGenerator/MyDaoGenerator.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android-priority-jobqueue/jobqueue/jobqueue.iml" filepath="$PROJECT_DIR$/android-priority-jobqueue/jobqueue/jobqueue.iml" />
     </modules>
   </component>
 </project>

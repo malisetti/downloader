@@ -88,7 +88,7 @@ public class DownloaderApplication extends Application {
                 .networkUtil(new PingNetworkUtil(instance))
                 .minConsumerCount(3)//always keep at least one consumer alive
                 .maxConsumerCount(5)//up to 3 consumers at a time
-                .loadFactor(5)//3 jobs per consumer
+                .loadFactor(1)//3 jobs per consumer
                 .consumerKeepAlive(120)//wait 2 minute
                 .build();
         jobManager = new JobManager(this, configuration);

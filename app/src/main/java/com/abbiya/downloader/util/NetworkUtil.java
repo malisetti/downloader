@@ -14,7 +14,7 @@ public class NetworkUtil {
 
     private Request request;
 
-    public Request getRequest(){
+    public Request getRequest() {
         return request;
     }
 
