@@ -28,5 +28,5 @@ dependencies {
     compile 'com.squareup.okhttp:okhttp:2.2.0'
     compile 'com.github.kevinsawicki:http-request:6.0'
     compile 'commons-io:commons-io:2.4'
-    compile project(':jobqueue')
+    compile 'com.birbit:android-priority-jobqueue:1.3'
 }

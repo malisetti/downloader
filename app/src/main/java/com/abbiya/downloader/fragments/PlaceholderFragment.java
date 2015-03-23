@@ -16,11 +16,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.abbiya.downloader.Constants;
-import com.abbiya.downloader.DownloaderApplication;
+import com.abbiya.downloader.App;
 import com.abbiya.downloader.R;
 import com.abbiya.downloader.Utils;
 import com.abbiya.downloader.events.DownloadFailedEvent;
 import com.abbiya.downloader.events.DownloadLinkAddedEvent;
+import com.abbiya.downloader.events.DownloadStartedEvent;
 import com.abbiya.downloader.events.DownloadSuccessEvent;
 import com.abbiya.downloader.events.GotHeadersEvent;
 import com.abbiya.downloader.jobs.GetFileJob;
@@ -58,7 +59,7 @@ public class PlaceholderFragment extends Fragment implements View.OnClickListene
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        jobManager = DownloaderApplication.getInstance().getJobManager();
+        jobManager = App.getInstance().getJobManager();
         EventBus.getDefault().register(this);
     }
 
@@ -124,32 +125,41 @@ public class PlaceholderFragment extends Fragment implements View.OnClickListene
         boolean resumable = acceptsMultipartDownloads(headers);
         int jobNum = 0;
         if (resumable) {
-            long i = 0;
+            long fileBytes = 0;
             long mb = FileUtils.ONE_MB;
-            int parts = (int)(cLength / mb) + 1;
+            int parts = (int)Math.ceil(cLength / mb);//parts is number of mbs, clength is content length
+            int fileNameLength = String.valueOf(parts).length(); //precision
+            while (fileBytes <= cLength) {
+                String fileName = String.format("%."+ (fileNameLength - 1) +"f", (float)jobNum);
 
-            while (i <= cLength) {
-                if (cLength - i <= mb) {
-                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(cLength), jobNum));
+                Toast.makeText(getActivity(), fileName, Toast.LENGTH_SHORT).show();
+
+                if (cLength - fileBytes <= mb) {
+                    //jobManager.addJobInBackground(new GetFileJob(event.url, String.valueOf(fileBytes) + "-" + String.valueOf(cLength), fileName));
                 } else {
-                    jobManager.addJobInBackground(new GetFileJob(event.url, "bytes=" + String.valueOf(i) + "-" + String.valueOf(i + mb), jobNum));
+                    //jobManager.addJobInBackground(new GetFileJob(event.url, String.valueOf(fileBytes) + "-" + String.valueOf(fileBytes + FileUtils.ONE_MB), fileName));
                 }
-                i += mb;
+                fileBytes += mb;
                 jobNum++;
             }
         } else {
-            jobManager.addJobInBackground(new GetFileJob(event.url, Constants.NONE, jobNum));
+            //jobManager.addJobInBackground(new GetFileJob(event.url, Constants.NONE, ""));
         }
     }
 
     @SuppressWarnings("UnusedDeclaration")
+    public void onEventMainThread(DownloadStartedEvent event){
+        Toast.makeText(getActivity(), "" + System.currentTimeMillis(), Toast.LENGTH_SHORT).show();
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
     public void onEventMainThread(DownloadLinkAddedEvent event){
-        Toast.makeText(getActivity(), event.link, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), event.link + "" + System.currentTimeMillis(), Toast.LENGTH_SHORT).show();
     }
 
     @SuppressWarnings("UnusedDeclaration")
     public void onEventMainThread(DownloadSuccessEvent event) {
-        //Toast.makeText(getActivity(), event.fileName, Toast.LENGTH_LONG).show();
+        Toast.makeText(getActivity(), event.fileName, Toast.LENGTH_SHORT).show();
     }
 
     @SuppressWarnings("UnusedDeclaration")

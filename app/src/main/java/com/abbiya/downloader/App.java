@@ -17,17 +17,17 @@ import com.path.android.jobqueue.config.Configuration;
 import com.path.android.jobqueue.log.CustomLogger;
 import com.squareup.okhttp.OkHttpClient;
 
-public class DownloaderApplication extends Application {
-    private static DownloaderApplication instance;
+public class App extends Application {
+    private static App instance;
     private static OkHttpClient client;
     public DaoSession daoSession;
     private JobManager jobManager;
 
-    public DownloaderApplication() {
+    public App() {
         instance = this;
     }
 
-    public synchronized static DownloaderApplication getInstance() {
+    public synchronized static App getInstance() {
         return instance;
     }
 

@@ -76,10 +76,24 @@ public class Utils {
         return file.getFreeSpace();
     }
 
-    public static File merge(File one, File two) {
+    public static File getTempFile(Context context, String fileName) {
+        File file;
+        try {
+            //String fileName = Uri.parse(url).getLastPathSegment();
+            file = File.createTempFile(fileName, null, context.getCacheDir());
+        }
+        catch(IOException e){
+            // Error while creating file
+            file = null;
+        }
+
+        return file;
+    }
+
+    private static File merge(File one, File two) {
         File mergedFile = null;
         try {
-            mergedFile = getTempFile(DownloaderApplication.getInstance().getApplicationContext(), "fd");
+            mergedFile = getTempFile(App.getInstance().getApplicationContext(), "fd");
             FileInputStream fis1 = new FileInputStream(one);
             FileInputStream fis2 = new FileInputStream(two);
             SequenceInputStream sis = new SequenceInputStream(fis1, fis2);
@@ -107,10 +121,15 @@ public class Utils {
         return mergedFile;
     }
 
-    public static File getTempFile(Context context, String fileName) throws IOException {
-        File file = null;
-        //String fileName = Uri.parse(url).getLastPathSegment();
-        file = File.createTempFile(fileName, null, context.getCacheDir());
-        return file;
+    public synchronized static File merge(File one, File two, boolean ioUtils) throws IOException {
+        if(ioUtils == true){
+            byte[] twoBytes = FileUtils.readFileToByteArray(two);
+
+            FileUtils.writeByteArrayToFile(one, twoBytes, true);
+
+            return one;
+        }else{
+            return Utils.merge(one, two);
+        }
     }
 }

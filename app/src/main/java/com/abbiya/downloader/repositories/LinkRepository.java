@@ -1,6 +1,6 @@
 package com.abbiya.downloader.repositories;
 
-import com.abbiya.downloader.DownloaderApplication;
+import com.abbiya.downloader.App;
 import com.abbiya.downloader.greendao.Link;
 import com.abbiya.downloader.greendao.LinkDao;
 
@@ -36,6 +36,6 @@ public class LinkRepository {
     }
 
     private synchronized static LinkDao getLinkDao() {
-        return DownloaderApplication.getInstance().getDaoSession().getLinkDao();
+        return App.getInstance().getDaoSession().getLinkDao();
     }
 }

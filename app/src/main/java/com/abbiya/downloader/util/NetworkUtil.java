@@ -1,6 +1,6 @@
 package com.abbiya.downloader.util;
 
-import com.abbiya.downloader.DownloaderApplication;
+import com.abbiya.downloader.App;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -23,7 +23,7 @@ public class NetworkUtil {
                 .head()
                 .url(url)
                 .build();
-        OkHttpClient client = DownloaderApplication.getInstance().getClient();
+        OkHttpClient client = App.getInstance().getClient();
         Response response = client.newCall(request).execute();
 
         return response;
@@ -31,11 +31,11 @@ public class NetworkUtil {
 
     public Response getFile(String url, String part) throws IOException {
         request = new Request.Builder()
-                .addHeader("Range", part)
+                .addHeader("Range", "bytes=" + part)
                 .get()
                 .url(url)
                 .build();
-        OkHttpClient client = DownloaderApplication.getInstance().getClient();
+        OkHttpClient client = App.getInstance().getClient();
         Response response = client.newCall(request).execute();
 
         return response;

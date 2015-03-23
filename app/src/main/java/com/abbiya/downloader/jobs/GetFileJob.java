@@ -1,11 +1,14 @@
 package com.abbiya.downloader.jobs;
 
+import android.provider.MediaStore;
 import android.webkit.URLUtil;
 
+import com.abbiya.downloader.App;
 import com.abbiya.downloader.Constants;
 import com.abbiya.downloader.Utils;
 import com.abbiya.downloader.events.DownloadFailedEvent;
 import com.abbiya.downloader.events.DownloadLinkAddedEvent;
+import com.abbiya.downloader.events.DownloadStartedEvent;
 import com.abbiya.downloader.events.DownloadSuccessEvent;
 import com.abbiya.downloader.util.NetworkUtil;
 import com.path.android.jobqueue.Job;
@@ -25,9 +28,9 @@ import de.greenrobot.event.EventBus;
 public class GetFileJob extends Job {
     String url;
     String part;
-    int jobNum;
+    String jobNum;
 
-    public GetFileJob(String url, String part, int jobNum) {
+    public GetFileJob(String url, String part, String jobNum) {
         super(new Params(Priority.MID).requireNetwork().groupBy(Constants.GET_FILE));
         this.url = url;
         this.part = part;
@@ -41,11 +44,11 @@ public class GetFileJob extends Job {
 
     @Override
     public void onRun() throws Throwable {
+        EventBus.getDefault().post(new DownloadStartedEvent());
         NetworkUtil networkUtil = new NetworkUtil();
         Response response = networkUtil.getFile(url, part);
-
-        InputStream in = response.body().byteStream();
         String fileName = URLUtil.guessFileName(url, "attachment", networkUtil.getRequest().header("Content-Type"));
+        //File file = Utils.getTempFile(App.getInstance(), fileName);
         File targetDir = Utils.getDownloadStorageDir(Constants.DOWNLOADS_DIR);
 
         boolean directDownload = true;
@@ -53,14 +56,14 @@ public class GetFileJob extends Job {
         if (part.equals(Constants.NONE) || part.equals("")) {
             directDownload = false;
         } else {
-            fileName = fileName + part;
+            fileName = fileName + jobNum;
         }
 
         File file = new File(targetDir, fileName);
-
+        InputStream in = response.body().byteStream();
         FileUtils.copyInputStreamToFile(in, file);
 
-        EventBus.getDefault().post(new DownloadSuccessEvent(fileName, targetDir.getPath(), url, part, directDownload));
+        EventBus.getDefault().post(new DownloadSuccessEvent(fileName, file.getPath(), url, part, directDownload));
     }
 
     @Override
