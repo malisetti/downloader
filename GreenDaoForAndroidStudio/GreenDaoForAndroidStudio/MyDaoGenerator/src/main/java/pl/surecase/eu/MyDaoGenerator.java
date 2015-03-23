@@ -17,6 +17,14 @@ public class MyDaoGenerator {
         link.addIntProperty("progress");
         link.addLongProperty("downloadId");
 
+        Entity job = schema.addEntity("Job");
+        job.addIdProperty();
+        job.addStringProperty("tag");
+        job.addStringProperty("status");
+        job.addLongProperty("size");
+        job.addIntProperty("progress");
+        job.addStringProperty("location");
+
         new DaoGenerator().generateAll(schema, args[0]);
     }
 }
