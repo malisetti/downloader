@@ -44,8 +44,13 @@ public class GetFileJob extends Job {
 
     @Override
     public void onRun() throws Throwable {
+
         EventBus.getDefault().post(new DownloadStartedEvent());
+
         NetworkUtil networkUtil = new NetworkUtil();
+
+        assertNotCancelled();
+
         Response response = networkUtil.getFile(url, part);
         String fileName = URLUtil.guessFileName(url, "attachment", networkUtil.getRequest().header("Content-Type"));
         //File file = Utils.getTempFile(App.getInstance(), fileName);
@@ -56,8 +61,10 @@ public class GetFileJob extends Job {
         if (part.equals(Constants.NONE) || part.equals("")) {
             directDownload = false;
         } else {
-            fileName = fileName + jobNum;
+            fileName = fileName + '.' + jobNum;
         }
+
+        assertNotCancelled();
 
         File file = new File(targetDir, fileName);
         InputStream in = response.body().byteStream();

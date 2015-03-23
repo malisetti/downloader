@@ -2,6 +2,7 @@ package com.abbiya.downloader;
 
 import android.content.Context;
 import android.os.Environment;
+import android.webkit.MimeTypeMap;
 
 import org.apache.commons.io.FileUtils;
 
@@ -9,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.SequenceInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -131,5 +133,31 @@ public class Utils {
         }else{
             return Utils.merge(one, two);
         }
+    }
+
+    public static String getExtension(String contentType)
+    {
+        return MimeTypeMap.getSingleton().getExtensionFromMimeType(contentType);
+    }
+
+    public static byte[] readFromFile(String filePath, int position, int size)
+            throws IOException {
+
+        RandomAccessFile file = new RandomAccessFile(filePath, "r");
+        file.seek(position);
+        byte[] bytes = new byte[size];
+        file.read(bytes);
+        file.close();
+
+        return bytes;
+    }
+
+    public static void writeToFile(String filePath, String data, int position)
+            throws IOException {
+
+        RandomAccessFile file = new RandomAccessFile(filePath, "rw");
+        file.seek(position);
+        file.write(data.getBytes());
+        file.close();
     }
 }

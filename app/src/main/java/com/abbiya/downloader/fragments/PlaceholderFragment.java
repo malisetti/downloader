@@ -30,6 +30,7 @@ import com.path.android.jobqueue.JobManager;
 import com.squareup.okhttp.Headers;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import de.greenrobot.event.EventBus;
 
@@ -130,14 +131,14 @@ public class PlaceholderFragment extends Fragment implements View.OnClickListene
             int parts = (int)Math.ceil(cLength / mb);//parts is number of mbs, clength is content length
             int fileNameLength = String.valueOf(parts).length(); //precision
             while (fileBytes <= cLength) {
-                String fileName = String.format("%."+ (fileNameLength - 1) +"f", (float)jobNum);
+                String fileName = StringUtils.leftPad(String.valueOf(jobNum), ++fileNameLength, '0');
 
                 Toast.makeText(getActivity(), fileName, Toast.LENGTH_SHORT).show();
 
                 if (cLength - fileBytes <= mb) {
-                    //jobManager.addJobInBackground(new GetFileJob(event.url, String.valueOf(fileBytes) + "-" + String.valueOf(cLength), fileName));
+                    jobManager.addJobInBackground(new GetFileJob(event.url, String.valueOf(fileBytes) + "-" + String.valueOf(cLength), fileName));
                 } else {
-                    //jobManager.addJobInBackground(new GetFileJob(event.url, String.valueOf(fileBytes) + "-" + String.valueOf(fileBytes + FileUtils.ONE_MB), fileName));
+                    jobManager.addJobInBackground(new GetFileJob(event.url, String.valueOf(fileBytes) + "-" + String.valueOf(fileBytes + FileUtils.ONE_MB), fileName));
                 }
                 fileBytes += mb;
                 jobNum++;
